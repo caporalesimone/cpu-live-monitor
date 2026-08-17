@@ -21,6 +21,8 @@ SAMPLE = """\
 
 ## [Unreleased]
 
+- Work in progress that must never reach a release.
+
 ## [1.0.1] - 2026-08-18
 
 ### Added
@@ -84,10 +86,19 @@ def test_an_unknown_version_fails_loudly(tmp_path):
     assert "9.9.9" in result.stderr
 
 
-def test_an_empty_section_fails_loudly(tmp_path):
+def test_unreleased_never_leaks_into_a_release(tmp_path):
+    """It sits directly above the version being released, and must stay there."""
     changelog = tmp_path / "CHANGELOG.md"
     changelog.write_text(SAMPLE, encoding="utf-8")
-    result = notes("Unreleased", "--changelog", str(changelog))
+    result = notes("1.0.1", "--changelog", str(changelog))
+    assert result.returncode == 0, result.stderr
+    assert "Work in progress" not in result.stdout
+
+
+def test_an_empty_section_fails_loudly(tmp_path):
+    changelog = tmp_path / "CHANGELOG.md"
+    changelog.write_text("# Changelog\n\n## [2.0.0] - 2026-09-01\n\n## [1.0.0]\n\nOld.\n")
+    result = notes("2.0.0", "--changelog", str(changelog))
     assert result.returncode == 1
 
 

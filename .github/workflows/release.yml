@@ -79,6 +79,6 @@ jobs:
             "${{ steps.build.outputs.archive }}" \
             "${{ steps.build.outputs.checksums }}" \
             --draft \
-            --title "cpumon ${{ steps.project.outputs.version }}" \
+            --title "Version ${{ steps.project.outputs.version }}" \
             --notes-file notes.md)"
           echo "Draft release ready to review: $url" >> "$GITHUB_STEP_SUMMARY"
