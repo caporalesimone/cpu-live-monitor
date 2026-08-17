@@ -1,0 +1,9 @@
+.venv/
+.poetry-cache/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+__pycache__/
+dist/
+build/
+*.egg-info/
