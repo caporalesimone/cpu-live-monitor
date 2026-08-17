@@ -109,7 +109,7 @@ terminal frame into a log.
 
 ## Evidence
 
-- 377 tests, `ruff` + `ruff format` + `mypy --strict` clean on `src` and `tools`.
+- 403 tests, `ruff` + `ruff format` + `mypy --strict` clean on `src` and `tools`.
 - Frames are **byte-for-byte identical** to the single-file implementation this
   package grew out of (preserved on the `singlefile` branch), verified over four
   synthetic topologies, ~17 000 geometries and every screen variant — bar the two
@@ -118,4 +118,4 @@ terminal frame into a log.
   4-core ARM part with no SMT, an x86 SMT part, a hybrid Intel part, and kernels
   that report less than the full picture.
 - `tools/deploy.bat` runs all of the above before it will build
-  `dist/cpumon.pyz`.
+  `dist/cpumon-<version>.pyz`, and so do CI and the release workflow.

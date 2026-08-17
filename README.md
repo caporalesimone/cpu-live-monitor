@@ -1,5 +1,12 @@
 # cpumon
 
+[![ci](https://github.com/caporalesimone/cpu-live-monitor/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/caporalesimone/cpu-live-monitor/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/caporalesimone/cpu-live-monitor?label=release)](https://github.com/caporalesimone/cpu-live-monitor/releases/latest)
+[![python](https://img.shields.io/badge/python-3.12-blue)](https://www.python.org/downloads/)
+[![platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Linux-lightgrey)](#requirements)
+[![dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)](#requirements)
+[![license](https://img.shields.io/github/license/caporalesimone/cpu-live-monitor)](LICENSE)
+
 A terminal CPU live monitor: per-logical-processor history, hybrid (P/E core)
 awareness and a fully responsive layout. Standard library only, on Windows and
 Linux.
@@ -40,17 +47,25 @@ the gauge, then the type column.
 ## Deploying to a device without poetry or pip
 
 The app is pure standard library, so a device needs nothing but a CPython
-interpreter. Build a single self-contained archive:
+interpreter. Take the archive from the
+[latest release](https://github.com/caporalesimone/cpu-live-monitor/releases/latest):
 
 ```bash
-python tools/build_zipapp.py          # -> dist/cpumon.pyz (~65 KiB)
+curl -LO https://github.com/caporalesimone/cpu-live-monitor/releases/latest/download/cpumon-1.0.1.pyz
+python3 cpumon-1.0.1.pyz
 ```
 
-Copy that one file over and run it:
+Or build one yourself:
 
 ```bash
-python cpumon.pyz                     # Windows and Linux
-./cpumon.pyz                          # Linux, after chmod +x (uses the shebang)
+python tools/build_zipapp.py          # -> dist/cpumon-1.0.1.pyz (~65 KiB)
+```
+
+Either way it is a single file. Copy it over and run it:
+
+```bash
+python cpumon-1.0.1.pyz               # Windows and Linux
+./cpumon-1.0.1.pyz                    # Linux, after chmod +x (uses the shebang)
 ```
 
 No install, no unpacking, no site-packages, no `PYTHONPATH`. All the CLI flags
@@ -59,10 +74,10 @@ work as usual (`--selftest`, `--probe`, `--version`).
 Two things the build script does deliberately:
 
 - It reads `[project].version` from pyproject.toml **at build time** and writes
-  it into the archive as `cpumon/_version.py`. An archive carries no
-  distribution metadata, and the app never reads pyproject.toml at runtime, so
-  this is what keeps `--version` and the title bar honest. Rebuild after a
-  version bump.
+  it into the archive as `cpumon/_version.py`, as well as into the file name. An
+  archive carries no distribution metadata, and the app never reads
+  pyproject.toml at runtime, so this is what keeps `--version` and the title bar
+  honest. Rebuild after a version bump.
 - It writes its own `__main__.py` instead of letting `zipapp` generate one:
   the generated entry point discards the return value of `main()`, which would
   flatten every exit code to 0.
@@ -73,9 +88,9 @@ Nothing here needs Poetry — the app has no dependencies, and the build script
 uses only the standard library:
 
 ```bash
-python3 dist/cpumon.pyz            # run the archive
+python3 dist/cpumon-1.0.1.pyz      # run the archive
 python3 tools/build_zipapp.py      # or build it, from Linux too
-chmod +x cpumon.pyz && ./cpumon.pyz
+chmod +x cpumon-1.0.1.pyz && ./cpumon-1.0.1.pyz
 PYTHONPATH=src python3 -m cpumon   # run straight from the sources
 ```
 
@@ -126,17 +141,27 @@ poetry run pytest
 ```
 
 `tools\deploy.bat` runs all four and only then builds the archive, so
-`dist/cpumon.pyz` is never a build of broken code.
+`dist/cpumon-<version>.pyz` is never a build of broken code. The same four run
+in CI on Linux and Windows for every push and pull request.
 
 Other tools:
 
 ```bash
 python tools/measure_cpu.py --match cpumon.pyz --threads   # what it costs, from /proc
 python tools/make_screenshot.py                            # regenerate the image above
+python tools/release_notes.py 1.0.1                        # this version's changelog section
 ```
 
-## Notes
+## Releasing
 
-The legacy single-file implementation is preserved on the `singlefile` branch.
-The package produces byte-for-byte identical frames, bar the quit key and the
-version string.
+A tag is the decision to release. Everything else is automatic:
+
+1. Bump `[project].version` in pyproject.toml and add the matching section to
+   `CHANGELOG.md` — that section *is* the release notes.
+2. `poetry install` (so the installed metadata matches), commit, push.
+3. `git tag -a v1.0.1 -m "cpumon 1.0.1" && git push origin v1.0.1`
+
+The tag triggers `.github/workflows/release.yml`, which refuses to go on unless
+the tag matches `[project].version`, runs the gates, builds the archive, and
+opens a **draft** release with `cpumon-1.0.1.pyz` and its SHA-256 attached.
+Review it on GitHub and press Publish.

@@ -1,0 +1,83 @@
+# Pushing a v<x.y.z> tag is the decision to release.
+#
+# The tag runs the same gates as tools/deploy.bat, builds the archive and opens
+# a *draft* release with it attached. Publishing stays a human click, so nothing
+# reaches the world without being looked at first.
+#
+#     git tag -a v1.0.1 -m "cpumon 1.0.1" && git push origin v1.0.1
+#
+# The notes are this repository's CHANGELOG.md section for that version, and the
+# tag must match [project].version — a mismatch stops the run before anything is
+# built, rather than shipping v1.0.1 with a 1.0.0 archive inside it.
+
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # create the release and upload its assets
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      # First, and without installing anything: a wrong tag costs ten seconds.
+      - name: The tag must match [project].version
+        id: project
+        run: |
+          version=$(python -c "import tomllib,pathlib;print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])")
+          tag="${GITHUB_REF_NAME#v}"
+          if [ "$version" != "$tag" ]; then
+            echo "::error::tag ${GITHUB_REF_NAME} does not match [project].version ${version}"
+            exit 1
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+      - name: Install Poetry
+        run: pipx install "poetry>=2.0"
+
+      # From poetry.lock, so the gates run the same tool versions as the desk
+      # they were last passed on.
+      - name: Install the project and its dev tools
+        run: poetry install
+
+      - name: Quality gates
+        run: |
+          poetry run ruff check .
+          poetry run ruff format --check .
+          poetry run mypy src tools
+          poetry run pytest -q
+
+      - name: Build the archive
+        id: build
+        run: |
+          archive="$(poetry run python tools/build_zipapp.py --print-output)"
+          poetry run python tools/build_zipapp.py
+          (cd "$(dirname "$archive")" && sha256sum "$(basename "$archive")" > SHA256SUMS.txt)
+          echo "archive=${archive}" >> "$GITHUB_OUTPUT"
+          echo "checksums=$(dirname "$archive")/SHA256SUMS.txt" >> "$GITHUB_OUTPUT"
+
+      # A missing or empty section is an error: better no release than one that
+      # says nothing.
+      - name: Release notes from the changelog
+        run: poetry run python tools/release_notes.py "${{ steps.project.outputs.version }}" --output notes.md
+
+      - name: Draft the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          url="$(gh release create "$GITHUB_REF_NAME" \
+            "${{ steps.build.outputs.archive }}" \
+            "${{ steps.build.outputs.checksums }}" \
+            --draft \
+            --title "cpumon ${{ steps.project.outputs.version }}" \
+            --notes-file notes.md)"
+          echo "Draft release ready to review: $url" >> "$GITHUB_STEP_SUMMARY"

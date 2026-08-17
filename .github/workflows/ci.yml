@@ -1,0 +1,53 @@
+# The same four gates as tools/deploy.bat, on both platforms the app supports.
+#
+# Running them here as well as on a tag is what keeps release day boring: a
+# broken main is found the day it is pushed, not the moment you want to ship.
+
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+# Three pushes in a row are three runs, and only the last one is worth waiting
+# for. Deliberately absent from release.yml: a release run must never be
+# cancelled half way through.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gates:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false # a Windows-only failure must not hide a Linux one
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: pipx install "poetry>=2.0"
+
+      - name: Install the project and its dev tools
+        run: poetry install
+
+      - name: ruff check
+        run: poetry run ruff check .
+
+      - name: ruff format --check
+        run: poetry run ruff format --check .
+
+      - name: mypy
+        run: poetry run mypy src tools
+
+      - name: pytest
+        run: poetry run pytest -q

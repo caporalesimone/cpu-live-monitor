@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-08-18
+
+Delivery, not the app: how a build reaches a device. Nothing the monitor draws
+has changed.
+
+### Added
+
+- **Release pipeline** (`.github/workflows/release.yml`). Pushing a `v<x.y.z>`
+  tag runs the same gates as `tools/deploy.bat`, builds the archive and opens a
+  **draft** release with it attached, alongside a `SHA256SUMS.txt`. Publishing
+  stays a human click. The tag must match `[project].version` or the run stops
+  before building anything, so a release can never contain a different version
+  from the one it claims.
+- **Release notes come from this file.** `tools/release_notes.py` prints the
+  section matching the version being released, and the workflow passes it to
+  `gh release create --notes-file`. A missing or empty section fails the run.
+- **Continuous integration** (`.github/workflows/ci.yml`): ruff, ruff format,
+  mypy and pytest on every push to `main` and every pull request, on Linux and
+  Windows both.
+- **`--print-output`** on `tools/build_zipapp.py`, which reports where the
+  archive will go without building it. The naming rule is stated once, and the
+  batch file, the workflow and the tests all ask rather than assume.
+
+### Changed
+
+- **The archive is named after its version**: `dist/cpumon-1.0.1.pyz` rather
+  than `dist/cpumon.pyz`. A file copied onto a device can now be identified
+  without being run, and two of them can sit side by side.
+
 ## [1.0.0] - 2026-08-17
 
 First release.
@@ -67,5 +96,6 @@ First release.
 - `q` or `Ctrl-C` quits. On the help page `q` closes the page instead, going back
   one level as a pager does.
 
-[Unreleased]: https://github.com/caporalesimone/cpu-live-monitor/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/caporalesimone/cpu-live-monitor/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/caporalesimone/cpu-live-monitor/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/caporalesimone/cpu-live-monitor/releases/tag/v1.0.0

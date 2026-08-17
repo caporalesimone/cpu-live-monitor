@@ -1,15 +1,21 @@
-"""Build a self-contained ``cpumon.pyz``, using the standard library only.
+"""Build a self-contained ``cpumon-<version>.pyz``, using the standard library only.
 
     python tools/build_zipapp.py
 
 The archive needs nothing on the target device but a CPython interpreter that
 satisfies ``requires-python``: no pip, no poetry, no site-packages, no unpacking
-step. Copy the file over and run ``python cpumon.pyz``.
+step. Copy the file over and run ``python cpumon-1.0.1.pyz``.
 
 The version is read from pyproject.toml *here*, at build time, and baked into
 the archive as ``cpumon/_version.py``. That is what keeps pyproject.toml the
 single source of truth while the app never reads it at runtime — inside a zipapp
-there is no installed distribution metadata to fall back on.
+there is no installed distribution metadata to fall back on. It also names the
+file, so an archive can be identified without being run, and two of them can sit
+side by side on a device.
+
+``--print-output`` reports where the archive will go without building it, so the
+release workflow and ``deploy.bat`` never have to spell the naming rule out a
+second time.
 """
 
 from __future__ import annotations
@@ -24,11 +30,11 @@ from tomllib import load as toml_load
 ROOT = Path(__file__).resolve().parent.parent
 PYPROJECT = ROOT / "pyproject.toml"
 PACKAGE = ROOT / "src" / "cpumon"
-DEFAULT_OUTPUT = ROOT / "dist" / "cpumon.pyz"
+DIST = ROOT / "dist"
 
 # Spelled out rather than taken from __doc__: docstrings are stripped under
 # python -OO, which would make the help text vanish or the build crash.
-DESCRIPTION = "build a self-contained cpumon.pyz, using the standard library only"
+DESCRIPTION = "build a self-contained cpumon-<version>.pyz, using the standard library only"
 
 # A shebang makes the archive directly executable on POSIX after chmod +x, and
 # is simply ignored on Windows, where you run `python cpumon.pyz`.
@@ -66,9 +72,16 @@ def read_project() -> tuple[str, str]:
     return str(project["version"]), str(project.get("requires-python", "any"))
 
 
-def build(output: Path, interpreter: str | None = DEFAULT_INTERPRETER) -> Path:
+def default_output(version: str) -> Path:
+    """The name the archive ships under. The one place that rule is stated."""
+    return DIST / f"cpumon-{version}.pyz"
+
+
+def build(output: Path | None = None, interpreter: str | None = DEFAULT_INTERPRETER) -> Path:
     """Write a runnable archive of the package to *output*."""
     version, requires_python = read_project()
+    if output is None:
+        output = default_output(version)
     with TemporaryDirectory() as tmp:
         staging = Path(tmp) / "archive"
         shutil.copytree(PACKAGE, staging / "cpumon", ignore=_IGNORED)
@@ -93,8 +106,13 @@ def main() -> int:
         "-o",
         "--output",
         type=Path,
-        default=DEFAULT_OUTPUT,
-        help=f"archive to write (default: {DEFAULT_OUTPUT.relative_to(ROOT)})",
+        default=None,
+        help="archive to write (default: dist/cpumon-<version>.pyz)",
+    )
+    parser.add_argument(
+        "--print-output",
+        action="store_true",
+        help="print the path that would be written, and build nothing",
     )
     parser.add_argument(
         "--interpreter",
@@ -109,6 +127,9 @@ def main() -> int:
         help="omit the shebang entirely",
     )
     args = parser.parse_args()
+    if args.print_output:
+        print(args.output or default_output(read_project()[0]))
+        return 0
     build(args.output, args.interpreter)
     return 0
 

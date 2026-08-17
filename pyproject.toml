@@ -1,6 +1,6 @@
 [project]
 name = "cpumon"
-version = "1.0.0"
+version = "1.0.1"
 description = "A terminal CPU live monitor."
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
