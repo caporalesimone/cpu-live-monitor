@@ -62,9 +62,7 @@ jobs:
         run: |
           archive="$(poetry run python tools/build_zipapp.py --print-output)"
           poetry run python tools/build_zipapp.py
-          (cd "$(dirname "$archive")" && sha256sum "$(basename "$archive")" > SHA256SUMS.txt)
           echo "archive=${archive}" >> "$GITHUB_OUTPUT"
-          echo "checksums=$(dirname "$archive")/SHA256SUMS.txt" >> "$GITHUB_OUTPUT"
 
       # A missing or empty section is an error: better no release than one that
       # says nothing.
@@ -77,7 +75,6 @@ jobs:
         run: |
           url="$(gh release create "$GITHUB_REF_NAME" \
             "${{ steps.build.outputs.archive }}" \
-            "${{ steps.build.outputs.checksums }}" \
             --draft \
             --title "Version ${{ steps.project.outputs.version }}" \
             --notes-file notes.md)"

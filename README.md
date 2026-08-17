@@ -169,5 +169,5 @@ A tag is the decision to release. Everything else is automatic:
 
 The tag triggers `.github/workflows/release.yml`, which refuses to go on unless
 the tag matches `[project].version`, runs the gates, builds the archive, and
-opens a **draft** release with `cpumon-1.0.1.pyz` and its SHA-256 attached.
-Review it on GitHub and press Publish.
+opens a **draft** release with `cpumon-1.0.1.pyz` attached. Review it on GitHub
+and press Publish.

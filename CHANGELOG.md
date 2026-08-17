@@ -16,8 +16,9 @@ has changed.
 
 - **Release pipeline** (`.github/workflows/release.yml`). Pushing a `v<x.y.z>`
   tag runs the same gates as `tools/deploy.bat`, builds the archive and opens a
-  **draft** release with it attached, alongside a `SHA256SUMS.txt`. Publishing
-  stays a human click. The tag must match `[project].version` or the run stops
+  **draft** release with it attached. Publishing stays a human click, and
+  GitHub shows the asset's SHA-256 itself. The tag must match
+  `[project].version` or the run stops
   before building anything, so a release can never contain a different version
   from the one it claims.
 - **Release notes come from this file.** `tools/release_notes.py` prints the
