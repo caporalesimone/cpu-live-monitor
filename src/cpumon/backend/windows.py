@@ -25,6 +25,16 @@ from cpumon.core.errors import PlatformError
 from cpumon.core.model import CoreClass, MemoryInfo, Topology
 from cpumon.core.topology import build_topology
 
+# msvcrt, winreg and ctypes.WinDLL exist on Windows and nowhere else, and
+# typeshed says so: every call below is an error when the file is analysed as
+# another platform. This guard states the same thing in code. A type checker
+# asked to look at the module as Linux finds the rest of it unreachable and
+# leaves it alone, and an accidental import at runtime gets one clear line
+# instead of a traceback from the first missing symbol.
+if sys.platform != "win32":  # pragma: no cover
+    raise PlatformError("the Windows backend requires Windows")
+
+
 _RELATION_PROCESSOR_CORE: Final = 0
 _ERROR_INSUFFICIENT_BUFFER: Final = 122
 _SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION: Final = 8

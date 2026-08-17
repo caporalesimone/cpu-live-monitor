@@ -35,6 +35,18 @@ has changed.
 - **The archive is named after its version**: `dist/cpumon-1.0.1.pyz` rather
   than `dist/cpumon.pyz`. A file copied onto a device can now be identified
   without being run, and two of them can sit side by side.
+- **The type check covers both platforms from either one.** Every gate now runs
+  `mypy --platform win32` *and* `--platform linux`, because `msvcrt` and
+  `termios` exist on one platform each and a backend otherwise only ever gets
+  checked natively.
+
+### Fixed
+
+- **The Windows backend did not type-check as Linux**, which nobody could see
+  while the only type check ran on Windows: sixteen uses of `ctypes.WinDLL`,
+  `msvcrt` and `winreg` that typeshed gates on `sys.platform`. The module now
+  refuses to be imported off Windows, which states the same fact to a reader,
+  to a type checker and to the interpreter at once.
 
 ## [1.0.0] - 2026-08-17
 

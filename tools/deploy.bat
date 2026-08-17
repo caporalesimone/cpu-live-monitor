@@ -37,8 +37,14 @@ echo [2/5] ruff format --check
 "%PY%" -m ruff format --check .
 if errorlevel 1 goto :failed
 
-echo [3/5] mypy
-"%PY%" -m mypy src tools
+rem Both platforms, from either one: the backend for the OS you are not sitting
+rem at is the one that drifts unnoticed.
+echo [3/5] mypy --platform win32
+"%PY%" -m mypy --platform win32 src tools
+if errorlevel 1 goto :failed
+
+echo       mypy --platform linux
+"%PY%" -m mypy --platform linux src tools
 if errorlevel 1 goto :failed
 
 echo [4/5] pytest

@@ -46,8 +46,14 @@ jobs:
       - name: ruff format --check
         run: poetry run ruff format --check .
 
-      - name: mypy
-        run: poetry run mypy src tools
+      # Two steps, not two lines in one: on the Windows runner a multi-command
+      # `run:` block only reports the last exit code, and a failure in the first
+      # command would pass unnoticed.
+      - name: mypy --platform win32
+        run: poetry run mypy --platform win32 src tools
+
+      - name: mypy --platform linux
+        run: poetry run mypy --platform linux src tools
 
       - name: pytest
         run: poetry run pytest -q

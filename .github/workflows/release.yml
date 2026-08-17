@@ -53,7 +53,8 @@ jobs:
         run: |
           poetry run ruff check .
           poetry run ruff format --check .
-          poetry run mypy src tools
+          poetry run mypy --platform win32 src tools
+          poetry run mypy --platform linux src tools
           poetry run pytest -q
 
       - name: Build the archive

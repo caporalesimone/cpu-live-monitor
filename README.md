@@ -136,9 +136,15 @@ Quality gates:
 ```bash
 poetry run ruff check .
 poetry run ruff format --check .
-poetry run mypy src/ tools/
+poetry run mypy --platform win32 src/ tools/
+poetry run mypy --platform linux src/ tools/
 poetry run pytest
 ```
+
+The type check runs twice on purpose. `msvcrt` and `termios` exist on one
+platform each, so a backend only ever type-checks natively unless you ask for
+the other platform explicitly — and the one you are not sitting at is the one
+that drifts.
 
 `tools\deploy.bat` runs all four and only then builds the archive, so
 `dist/cpumon-<version>.pyz` is never a build of broken code. The same four run
